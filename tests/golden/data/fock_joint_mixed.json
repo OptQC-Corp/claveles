@@ -1,0 +1,170 @@
+{
+  "case": "fock_joint_mixed",
+  "route": "circuit",
+  "note": "A mixed Fock state spanning two modes, purified onto an ancilla on the way in.",
+  "sampling": false,
+  "conditions": {
+    "n_shots": 8,
+    "random_seed": 12345,
+    "backend": "single_cpu",
+    "state_save_policy": "all",
+    "resource_squeezing_level": 10.0,
+    "max_bond_dim": null,
+    "svd_cutoff": 0.0,
+    "track_truncation_error": false,
+    "decompose_std": false
+  },
+  "measured_columns": [
+    "shot",
+    "mode",
+    "value"
+  ],
+  "measured_rows": 0,
+  "truncation_errors": [],
+  "states": [
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          2,
+          2
+        ],
+        "is_pure": false
+      },
+      "arrays": [
+        "density_matrix"
+      ]
+    }
+  ]
+}

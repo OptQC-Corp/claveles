@@ -1,0 +1,146 @@
+{
+  "case": "bosonic_multi_mode_ff",
+  "route": "circuit",
+  "note": "Two-mode entangling gates plus a feedforward from a measurement into a displacement.",
+  "sampling": true,
+  "conditions": {
+    "n_shots": 8,
+    "random_seed": 12345,
+    "backend": "single_cpu",
+    "state_save_policy": "all",
+    "resource_squeezing_level": 10.0,
+    "max_bond_dim": null,
+    "svd_cutoff": 0.0,
+    "track_truncation_error": false,
+    "decompose_std": false
+  },
+  "measured_columns": [
+    "shot",
+    "mode",
+    "value"
+  ],
+  "measured_rows": 8,
+  "truncation_errors": [],
+  "states": [
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    },
+    {
+      "kind": "bosonic",
+      "meta": {
+        "modes": [
+          1
+        ],
+        "n_modes": 1,
+        "n_peaks": 1
+      },
+      "arrays": [
+        "coeffs",
+        "covs",
+        "means"
+      ]
+    }
+  ]
+}

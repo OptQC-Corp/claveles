@@ -1,0 +1,414 @@
+// Copyright 2026 OptQC Corp.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package claveles_cloud.program.v1;
+
+import "claveles_cloud/common/v1/function.proto";
+import "claveles_cloud/common/v1/math.proto";
+
+// Non-linear feedforward of circuit representation.
+//
+// Constraints:
+// 1. 'from_operation' must be an index of measurement operation.
+// 2. 'from_operation' < 'to_operation'.
+// 3. The FF-target parameter is initialized to zero.
+// 4. A single measurement value can be used for up to L FFs.
+//
+// The number of the FFs L depends on the backend in which the program is executed.
+// Refer to the documentation for the values.
+//
+// The indices used in this message are defined in CircuitRepresentation, which contains the FFs.
+message CircuitFF {
+  // The index of function.
+  uint32 function = 1;
+
+  // The index of FF source operation.
+  uint32 from_operation = 2;
+
+  // The index of FF target operation.
+  uint32 to_operation = 3;
+
+  // The parameter index of FF target operation.
+  uint32 to_parameter = 4;
+}
+
+// Circuit representation of continuous variable quantum computation.
+message CircuitRepresentation {
+  // The number of modes.
+  uint32 n_modes = 1;
+
+  // The initial quantum state of every mode, given as separable pieces.
+  //
+  // - Every mode of the circuit must be covered exactly once, and nothing else may be.
+  // - An entry covers the modes its `modes` field names, or, when that is empty, the single mode its
+  //   own position in this list corresponds to. The two styles must not be mixed within one circuit.
+  // - An entry may therefore span several modes, which is how a state correlating them (an EPR state,
+  //   say) is expressed. Modes that are not correlated should be given as separate entries, because
+  //   the simulator can then keep them factored.
+  // - `BosonicState` and `FockState` entries are simulation-only.
+  // - If targeting a real QPU, only `HardwareConstrainedSqueezedState` is allowed.
+  repeated InitialState initial_states = 2;
+
+  // The sequence of operations performed in the quantum computation.
+  repeated CircuitOperation operations = 3;
+
+  // Setting for each non-linear feedforward.
+  repeated CircuitFF nlffs = 4;
+
+  // The python functions used in the non-linear feedforwards.
+  repeated claveles_cloud.common.v1.PythonFunction functions = 5;
+
+  // The name of circuit representation.
+  string name = 100;
+}
+
+// The Gaussian state of a bosonic mode.
+// Represented by a phase-space mean vector and covariance matrix.
+message GaussianState {
+  // Mean vector in phase space. Size is 2 x N.
+  // The values are ordered as follows:
+  // - The x-means of modes 0, 1, ..., N-1.
+  // - The p-means of modes 0, 1, ..., N-1.
+  // where N is the number of modes.
+  repeated claveles_cloud.common.v1.Complex mean = 1;
+
+  // Covariance matrix in phase space. Size is 4 x N^2.
+  // Must be symmetric and positive definite.
+  repeated float cov = 2;
+}
+
+// The bosonic state represented as a superposition of Gaussian states.
+// Used for simulation purposes only.
+// - The number of modes is the same for all Gaussian states.
+// - The sum of 'coeffs' must be 1.
+message BosonicState {
+  // Gaussian states for each peak in the superposition.
+  repeated GaussianState gaussian_states = 1;
+
+  // Complex coefficients for the Gaussian states.
+  repeated claveles_cloud.common.v1.Complex coeffs = 2;
+
+  // Original mode index for each row of `gaussian_states.mean` / `cov`.
+  //
+  // When a mode is removed mid-circuit (e.g. by OPERATION_TYPE_PARTIAL_TRACE), the
+  // remaining modes are packed together in the output, which loses track of which
+  // original mode each row belongs to. This field records that mapping: `modes[k]`
+  // is the original index of the mode stored at row k.
+  //
+  // Example: a 3-mode state with mode 1 removed leaves rows for modes 0 and 2, so
+  // mean = [x0, x2, ...] and modes = [0, 2]. Row 1 is mode 2, not mode 1.
+  //
+  // Output-only (set by the simulator; ignored on input in `initial_states`). Always
+  // present, listed in ascending order, even when nothing was removed (then it is
+  // just [0, 1, ..., N-1]).
+  repeated uint32 modes = 3;
+
+  // Fock space dimension D_i to expand each mode into, if this state is converted to the
+  // Fock representation mid-simulation.
+  //
+  // A bosonic state is defined by its peaks alone, so this says nothing about the state
+  // itself: it is the cutoff the simulator uses when a Fock-only operation forces the
+  // state into the Fock basis. One entry per mode of this state, in the same order as
+  // `gaussian_states.mean` / `cov`, matching how `FockState.cutoff_dims` is written.
+  //
+  // Empty means the cutoff was not chosen, and the simulator applies its own default.
+  // Whatever the cutoff, the expansion truncates the state's infinite Fock tail, and the
+  // weight lost that way is left in the state rather than normalized away, exactly as it
+  // is for a `SingleModeFockState` given with a cutoff too small for its own tail.
+  //
+  // Input-only (read from `initial_states`; not set by the simulator on output, whose
+  // states carry a real cutoff in `FockState.cutoff_dims`).
+  repeated uint32 cutoff_dims = 4;
+}
+
+// A squeezed state for hardware execution with a fixed squeezing level.
+// Only the squeezing angle 'theta' is user-controllable due to hardware constraints.
+message HardwareConstrainedSqueezedState {
+  // Squeezing angle 'theta' [radians].
+  // Determines the squeezing direction in phase space.
+  float theta = 1;
+}
+
+// Amplitudes of a pure state in the Fock basis.
+//
+// Wrapper message so that the amplitudes can sit inside a `oneof`, which cannot hold a
+// `repeated` field directly. Used by both `FockState` (output) and `SingleModeFockState` (input).
+//
+// The amplitudes are flattened over the modes with mode 0 as the most significant index, i.e.
+// amplitude (n_0, ..., n_{N-1}) is stored at index ((n_0 * D_1 + n_1) * D_2 + n_2) ... . For a
+// single mode this reduces to index n. The length equals the product of the modes' cutoff_dims.
+//
+// Never rescaled in transit, in either direction: the norm is whatever the sender put there, so a
+// normalized state stays normalized and an unnormalized one is not silently repaired. What the norm
+// means therefore depends on the direction, and is documented where the field is used: see
+// `SingleModeFockState.state_vector` for an initial state, and `FockState` for a simulation result.
+//
+// See `FockDensityMatrix` for the mixed-state counterpart, which follows the same convention with
+// its trace.
+message FockStateVector {
+  // Joint state vector amplitudes.
+  repeated claveles_cloud.common.v1.Complex amplitudes = 1;
+}
+
+// Entries of a density matrix in the Fock basis.
+//
+// Wrapper message so that the entries can sit inside a `oneof`, which cannot hold a `repeated`
+// field directly. Used by both `FockState` (output) and `SingleModeFockState` (input).
+//
+// Row-major over the joint Fock basis: entry (row, col) is stored at index row * dim + col and
+// equals <row| rho |col>, where dim is the product of the modes' cutoff_dims. Each of row and col
+// is flattened over the modes exactly as in `FockStateVector`. The length equals dim * dim.
+//
+// Never rescaled in transit, exactly as for `FockStateVector`, with the trace in place of the norm:
+// the trace is whatever the sender put there, and what it means depends on the direction. See
+// `SingleModeFockState.density_matrix` for an initial state, and `FockState` for a simulation result.
+//
+// Must be Hermitian and positive semi-definite in both directions.
+message FockDensityMatrix {
+  // Joint density matrix entries.
+  repeated claveles_cloud.common.v1.Complex entries = 1;
+}
+
+// A Fock-space quantum state over one or more modes.
+//
+// A pure state carries a joint state vector; a mixed state carries a joint density matrix. Which
+// one is present is a structural property of the circuit (a state becomes mixed once a loss
+// channel or a partial trace is applied), not the result of a numerical purity test, so the same
+// circuit always reports the same representation.
+//
+// Reported unnormalized. The state vector's norm, or the density matrix's trace, is the weight the
+// state has left, so the loss stays visible rather than being divided away and the same circuit
+// reports it identically in either representation. It falls below 1 when the initial state was given
+// with a weight below 1, when a finite cutoff_dim truncated the Fock tail of a state, or when a bond
+// dimension limit discarded part of it; with none of those in play it stays at 1, to within the few
+// 1e-8 of round-off from the float32 components. Divide by the norm or the trace to normalize.
+message FockState {
+  // Fock space dimension D_i of each mode held by this state, in the same order as `modes`.
+  // Modes may declare different cutoff dimensions; the simulator keeps them per mode.
+  repeated uint32 cutoff_dims = 1;
+
+  // Original (logical) index of each mode held by this state, in ascending order.
+  //
+  // Modes keep their original indices even when other modes are removed mid-circuit, so these
+  // need not be 0..N-1. Mirrors BosonicState.modes.
+  repeated uint32 modes = 2;
+
+  oneof representation {
+    // The state is pure: amplitudes of the joint state vector.
+    FockStateVector state_vector = 3;
+
+    // The state is mixed: entries of the joint density matrix.
+    FockDensityMatrix density_matrix = 4;
+  }
+}
+
+// A single-mode Fock-space initial state.
+//
+// Assign an independent `SingleModeFockState` per mode; the modes may use different cutoff
+// dimensions. Entanglement between modes cannot be expressed on input.
+message SingleModeFockState {
+  // Fock space dimension D for this mode. Fock numbers range from 0 to D-1.
+  // Each mode may declare a different cutoff_dim; the simulator keeps them per mode.
+  uint32 cutoff_dim = 1;
+
+  oneof state_type {
+    // The number state |number>.
+    uint32 number = 2;
+
+    // A pure state: amplitudes in the Fock basis (length D).
+    //
+    // Simulated with the weight supplied here: the simulator does not rescale it, so normalizing is
+    // the sender's decision (the SDK exposes it as FockState's `normalize` argument).
+    //
+    // A squared norm below 1 is accepted with no lower bound: an analytically normalized coherent or
+    // squeezed state legitimately arrives that way once the cutoff has truncated its Fock tail, and
+    // how far below 1 it lands is a property of that truncation.
+    //
+    // Rejected are the two cases a truncated state cannot be: an all-zero vector, and a squared norm
+    // above 1. The latter is checked with a small tolerance (1e-5) so that a state normalized in
+    // double precision is not rejected over the round-off of the float32 components above; an input
+    // that simply was not normalized is off by far more than that.
+    FockStateVector state_vector = 3;
+
+    // A mixed state: row-major D x D density matrix (length D*D).
+    // Starting a circuit from a mixed state makes the simulation use the mixed-state
+    // representation from the outset.
+    //
+    // Follows the same rule as `state_vector`, with the trace in place of the squared norm: a trace
+    // below 1 is accepted as a truncated state (a thermal state's Fock tail does not fit a finite
+    // cutoff either), while an all-zero matrix and a trace above 1 (up to the same tolerance) are
+    // rejected. Must also be Hermitian and positive semi-definite.
+    FockDensityMatrix density_matrix = 4;
+  }
+}
+
+// Represents the initial quantum state for a single mode.
+//
+// - `HardwareConstrainedSqueezedState` is used when targeting real QPUs
+//   where the squeezing level is fixed by hardware and only the angle can be set.
+// - `BosonicState` is used only in simulation, allowing arbitrary
+//   superpositions of single-mode Gaussian states.
+// - `SingleModeFockState` is used in simulation for Fock-space representations.
+message InitialState {
+  oneof state_type {
+    // A squeezed state with fixed squeezing level for hardware execution.
+    HardwareConstrainedSqueezedState squeezed = 1;
+
+    // A superposition of Gaussian states for simulation.
+    BosonicState bosonic = 2;
+
+    // A single-mode Fock-space state for simulation.
+    //
+    // Kept alongside `fock_multi_mode` because it is the only form that can name a number state as a
+    // number rather than as an expanded basis vector, which is both smaller on the wire and what the
+    // simulator prepares directly.
+    SingleModeFockState fock = 3;
+
+    // A Fock-space state spanning one or more modes, for simulation.
+    //
+    // The same message the simulator reports a state in, so a state read out of one run can be fed
+    // into the next. Its `modes` field is ignored here: which modes an initial state occupies is said
+    // by `InitialState.modes`, so that every representation says it the same way.
+    FockState fock_multi_mode = 5;
+  }
+
+  // Which modes of the circuit this state occupies, in the state's own mode order.
+  //
+  // Empty means the position in `CircuitRepresentation.initial_states` is the mode, which is how a
+  // one-mode-per-entry circuit has always been written and stays valid. Naming the modes explicitly
+  // is what lets one entry span several modes, so that a state correlating two modes can be given as
+  // one state rather than as two marginals.
+  //
+  // Across the whole list every mode must appear exactly once.
+  repeated uint32 modes = 4;
+}
+
+// Visual metadata used for GUI-based circuit visualization.
+// This information is purely for display purposes and does not affect circuit logic.
+message GuiMetadataCircuitOperation {
+  // Represents the horizontal position (x-axis) in the visual editor.
+  uint32 slot = 1;
+}
+
+// Operation in the circuit representation of continuous variable quantum computation.
+//
+// <pre>
+// OperationType                 size of modes  size of parameters
+// OPERATION_TYPE_MEASUREMENT          1              1
+// OPERATION_TYPE_DISPLACEMENT         1              2
+// OPERATION_TYPE_PHASE_ROTATION       1              1
+// OPERATION_TYPE_SHEAR_X_INVARIANT    1              1
+// OPERATION_TYPE_SHEAR_P_INVARIANT    1              1
+// OPERATION_TYPE_SQUEEZING            1              1
+// OPERATION_TYPE_SQUEEZING_45         1              1
+// OPERATION_TYPE_ARBITRARY            1              3
+// OPERATION_TYPE_CONTROLLED_Z         2              1
+// OPERATION_TYPE_BEAM_SPLITTER        2              2
+// OPERATION_TYPE_TWO_MODE_SHEAR       2              2
+// OPERATION_TYPE_MANUAL               2              4
+// OPERATION_TYPE_KERR                 1              1
+// OPERATION_TYPE_CUBIC_PHASE          1              1
+// OPERATION_TYPE_TOFFOLI              3              1
+// OPERATION_TYPE_CCZ                  3              1
+// OPERATION_TYPE_TWO_MODE_SQUEEZING   2              2
+// OPERATION_TYPE_BEAM_SPLITTER_STD    2              2
+// OPERATION_TYPE_LOSS_CHANNEL         1              1
+// OPERATION_TYPE_THERMAL_LOSS_CHANNEL 1              2
+// </pre>
+message CircuitOperation {
+  enum OperationType {
+    OPERATION_TYPE_UNSPECIFIED = 0; /// Reserved field
+
+    OPERATION_TYPE_MEASUREMENT = 1; /// Homodyne measurement
+
+    OPERATION_TYPE_DISPLACEMENT = 2; /// Displacement
+
+    OPERATION_TYPE_PHASE_ROTATION = 3; /// Phase rotation
+    OPERATION_TYPE_SHEAR_X_INVARIANT = 4; /// Shear (X-Invariant)
+    OPERATION_TYPE_SHEAR_P_INVARIANT = 5; /// Shear (P-Invariant)
+    OPERATION_TYPE_SQUEEZING = 6; /// Squeezing
+    OPERATION_TYPE_SQUEEZING_45 = 7; /// 45-degree Squeezing
+    OPERATION_TYPE_ARBITRARY = 8; /// Arbitrary gaussian
+
+    OPERATION_TYPE_CONTROLLED_Z = 9; /// Cz
+    OPERATION_TYPE_BEAM_SPLITTER = 10; /// Beam splitter interaction
+    OPERATION_TYPE_TWO_MODE_SHEAR = 11; /// Two-mode Shear
+    OPERATION_TYPE_MANUAL = 12; /// Set four measurement angles of a macronode
+
+    OPERATION_TYPE_PARTIAL_TRACE = 13; /// Partial trace (discard a mode)
+
+    OPERATION_TYPE_MEASURE_FOCK = 14; /// Fock-number measurement
+
+    OPERATION_TYPE_KERR = 15; /// Kerr gate (non-Gaussian, Fock backend only)
+
+    OPERATION_TYPE_CUBIC_PHASE = 16; /// Cubic phase gate (non-Gaussian, Fock backend only)
+
+    OPERATION_TYPE_TOFFOLI = 17; /// Toffoli gate exp(-i g x1 x2 p3) (non-Gaussian, Fock backend only)
+    OPERATION_TYPE_CCZ = 18; /// CCZ gate exp(-i g x1 x2 x3) (non-Gaussian, Fock backend only)
+
+    OPERATION_TYPE_TWO_MODE_SQUEEZING = 19; /// Two-mode squeezing S2(r, phi) (Gaussian, circuit representation only)
+
+    OPERATION_TYPE_BEAM_SPLITTER_STD = 20; /// Standard beam splitter B_std(theta, phi) (passive; sent undecomposed to simulators that support it)
+
+    OPERATION_TYPE_LOSS_CHANNEL = 21; /// Pure-loss channel with transmittance T (non-unitary channel; makes a Fock state mixed)
+    OPERATION_TYPE_THERMAL_LOSS_CHANNEL = 22; /// Thermal-loss channel with transmittance T and environment mean photon number nbar (non-unitary channel; makes a Fock state mixed)
+  }
+
+  // Type of operation
+  OperationType type = 1;
+
+  // Indices of the operated modes.
+  repeated uint32 modes = 2;
+
+  // Parameter values of the operation.
+  repeated float parameters = 3;
+
+  // Field 4 held `remove_after_measurement`, which chose whether a measured mode was
+  // discarded or reset to vacuum and kept. Measurement now always discards its mode, so
+  // there is nothing to choose. The remaining modes keep their original (logical) indices.
+  reserved 4;
+
+  // Measurement operations only: if set, post-select the measurement to this fixed
+  // outcome instead of sampling. For homodyne measurement it is the forced quadrature
+  // value; for Fock-number measurement it is the forced Fock number (rounded
+  // to a non-negative integer). Absent means ordinary sampling. Ignored for
+  // non-measurement operations.
+  optional double post_select_value = 5;
+
+  // Optional metadata used only for GUI display and visualization.
+  GuiMetadataCircuitOperation gui_metadata = 100;
+}
+
+message CircuitResult {
+  // The measured value per mode.
+  message OperationMeasuredValue {
+    // The index of the mode.
+    uint32 index = 1;
+
+    // The measured value.
+    float value = 2;
+  }
+
+  // The measured values in a shot.
+  message ShotMeasuredValue {
+    // The measurement results in the operations.
+    repeated OperationMeasuredValue measured_vals = 1;
+  }
+
+  // The measured values in a shot.
+  // The number of shots is equal to the number of elements in the repeated field.
+  repeated ShotMeasuredValue measured_vals = 1;
+}

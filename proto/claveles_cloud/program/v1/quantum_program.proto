@@ -1,0 +1,133 @@
+// Copyright 2026 OptQC Corp.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package claveles_cloud.program.v1;
+
+import "claveles_cloud/program/v1/circuit.proto";
+import "claveles_cloud/program/v1/graph.proto";
+import "claveles_cloud/program/v1/machinery.proto";
+
+// Quantum program representation formats.
+enum RepresentationFormat {
+  // Unspecified format.
+  REPRESENTATION_FORMAT_UNSPECIFIED = 0;
+
+  // High-level circuit representation.
+  REPRESENTATION_FORMAT_CIRCUIT = 1;
+
+  // Intermediate graph representation.
+  REPRESENTATION_FORMAT_GRAPH = 2;
+
+  // Low-level machinery representation.
+  REPRESENTATION_FORMAT_MACHINERY = 3;
+}
+
+// Container for a quantum program.
+message QuantumProgram {
+  // The format of the program representation.
+  RepresentationFormat format = 1;
+
+  // The actual data of the QuantumProgram.
+  // This payload is one of the three representations.
+  oneof payload {
+    // Used when the format is REPRESENTATION_FORMAT_CIRCUIT.
+    claveles_cloud.program.v1.CircuitRepresentation circuit = 2;
+
+    // Used when the format is REPRESENTATION_FORMAT_GRAPH.
+    claveles_cloud.program.v1.GraphRepresentation graph = 3;
+
+    // Used when the format is REPRESENTATION_FORMAT_MACHINERY.
+    claveles_cloud.program.v1.MachineryRepresentation machinery = 4;
+  }
+}
+
+// Container for a quantum program result.
+message QuantumProgramResult {
+  // [Backends] BOTH
+  // [Population Rules]
+  //   - Populated when QuantumProgram.format == REPRESENTATION_FORMAT_CIRCUIT.
+  // The result of executing the circuit-level representation.
+  claveles_cloud.program.v1.CircuitResult circuit_result = 1;
+
+  // [Backends] BOTH
+  // [Population Rules]
+  //   - HARDWARE  : Populated when QuantumProgram.format is in
+  //                 { REPRESENTATION_FORMAT_CIRCUIT, REPRESENTATION_FORMAT_GRAPH }.
+  //   - SIMULATOR : Populated when QuantumProgram.format == REPRESENTATION_FORMAT_GRAPH.
+  // The result of executing the graph-level representation.
+  claveles_cloud.program.v1.GraphResult graph_result = 2;
+
+  // [Backends] BOTH
+  // [Population Rules]
+  //   - HARDWARE  : Populated when QuantumProgram.format is in
+  //                 { REPRESENTATION_FORMAT_CIRCUIT, REPRESENTATION_FORMAT_GRAPH, REPRESENTATION_FORMAT_MACHINERY }.
+  //   - SIMULATOR : Populated when QuantumProgram.format == REPRESENTATION_FORMAT_MACHINERY.
+  // The result of executing the machinery-level representation.
+  claveles_cloud.program.v1.MachineryResult machinery_result = 3;
+
+  // [Backends] HARDWARE
+  // [Population Rules]
+  //   - Populated when QuantumProgram.format is in
+  //                 { REPRESENTATION_FORMAT_CIRCUIT, REPRESENTATION_FORMAT_GRAPH }.
+  // The graph representation produced by compilation.
+  claveles_cloud.program.v1.GraphRepresentation compiled_graph = 4;
+
+  // [Backends] HARDWARE
+  // [Population Rules]
+  //   - Populated when QuantumProgram.format is in
+  //                 { REPRESENTATION_FORMAT_CIRCUIT, REPRESENTATION_FORMAT_GRAPH, REPRESENTATION_FORMAT_MACHINERY }.
+  // The machinery representation produced by compilation.
+  claveles_cloud.program.v1.MachineryRepresentation compiled_machinery = 5;
+
+  // [Backends] SIMULATOR
+  // [Population Rules]
+  //   - Populated when QuantumProgram.format == REPRESENTATION_FORMAT_CIRCUIT
+  //     AND JobExecutionSettings.state_save_policy != JOB_STATE_SAVE_POLICY_NONE.
+  // [Notes]
+  //   - Size depends on state_save_policy and n_shots.
+  // The saved quantum states per shot, as determined by the configured save policy.
+  repeated claveles_cloud.program.v1.BosonicState circuit_state = 6;
+
+  // Removed in favour of `circuit_fock_quantum_state`, which holds pure and mixed Fock states in a
+  // single repeated field (see field 10).
+  reserved 7, 8;
+  reserved "circuit_fock_state", "circuit_fock_density_matrix";
+
+  // [Backends] SIMULATOR
+  // [Population Rules]
+  //   - Populated when the circuit uses Fock-space initial states
+  //     AND truncation-error tracking is enabled in the simulation settings.
+  // [Notes]
+  //   - One entry per shot; independent of state_save_policy.
+  // The accumulated SVD truncation error (sum of discarded singular-value
+  // weights over all two-mode gates) per shot. Used to gauge the physical
+  // reliability of a bond-dimension-limited Fock simulation.
+  //
+  // For a mixed state the error is measured on the purification's state vector, so it is an
+  // indication of, not an exact bound on, the error of the density matrix itself.
+  repeated double circuit_truncation_error = 9;
+
+  // [Backends] SIMULATOR
+  // [Population Rules]
+  //   - Populated when the circuit uses Fock-space initial states
+  //     AND JobExecutionSettings.state_save_policy != JOB_STATE_SAVE_POLICY_NONE.
+  // [Notes]
+  //   - Size depends on state_save_policy and n_shots.
+  //   - One entry per saved shot, in shot order. Pure and mixed states share this field, so the
+  //     shot order is preserved even when the representation differs between shots.
+  // The saved Fock quantum states per shot, as determined by the configured save policy.
+  repeated claveles_cloud.program.v1.FockState circuit_fock_quantum_state = 10;
+}

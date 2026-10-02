@@ -1,0 +1,179 @@
+{
+  "case": "fock_truncated",
+  "route": "circuit",
+  "note": "MPS truncation: a bond dimension low enough to discard weight, with the error tracked.",
+  "sampling": false,
+  "conditions": {
+    "n_shots": 8,
+    "random_seed": 12345,
+    "backend": "single_cpu",
+    "state_save_policy": "all",
+    "resource_squeezing_level": 10.0,
+    "max_bond_dim": 4,
+    "svd_cutoff": 1e-06,
+    "track_truncation_error": true,
+    "decompose_std": false
+  },
+  "measured_columns": [
+    "shot",
+    "mode",
+    "value"
+  ],
+  "measured_rows": 0,
+  "truncation_errors": [
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097,
+    0.07072531102273097
+  ],
+  "states": [
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    },
+    {
+      "kind": "fock",
+      "meta": {
+        "modes": [
+          0,
+          1
+        ],
+        "n_modes": 2,
+        "cutoff_dims": [
+          12,
+          12
+        ],
+        "is_pure": true
+      },
+      "arrays": [
+        "state_vector"
+      ]
+    }
+  ]
+}
