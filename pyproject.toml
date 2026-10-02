@@ -1,0 +1,99 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claveles-core"
+description = "Software development kit for continuous-variable quantum computing"
+readme = "README.md"
+requires-python = ">=3.10"
+
+authors = [{ name = "OptQC Corp.", email = "oss@optqc.com" }]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md"]
+keywords = ["quantum-computing", "quantum", "cluster-states", "continuous-variable", "bosonic", "CV"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Quantum Computing",
+  "Typing :: Typed",
+]
+
+dynamic = ["version"]
+
+dependencies = [
+  "typing_extensions >= 4.12",
+  'tzdata >= 2025.1; platform_system == "Windows"',
+
+  "numpy >= 2.1, < 3",
+  "networkx >= 3.4, < 4",
+
+  "grpcio ~= 1.71",
+  "protobuf >= 7.36.2, < 8",
+  "requests >= 2.31, < 3",
+]
+
+# [project.urls]
+
+[project.optional-dependencies]
+dev = [
+  "matplotlib",
+  "sympy",
+  "scipy",
+  "scipy >= 1.14; python_version >= '3.13'",
+  "setuptools",
+  "setuptools >= 81.0.0; python_version >= '3.13'",
+
+  # Test
+  "pytest",
+  "pytest-xdist",
+  "pytest-cov",
+  "pathos",
+
+  # Document
+  "sphinx",
+  "sphinx_copybutton",
+  "sphinx-design",
+  "sphinxcontrib-bibtex",
+  "myst-parser",
+  "myst-nb",
+  "furo",
+  "jupyter",
+  "ipykernel",
+]
+
+[tool.uv]
+prerelease = "allow"
+
+[tool.setuptools.dynamic]
+version = { attr = "claveles.__version__.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["claveles*"]
+namespaces = false
+exclude = ["build", "tests"]
+
+[tool.setuptools.package-data]
+claveles = ["py.typed"]
+
+[tool.pytest.ini_options]
+pythonpath = ["tests"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.src]
+exclude = [
+  "**/pb/claveles_cloud/**", # protobuf generated files
+  "docs/**",
+  "examples/**",
+  "tools/**",
+]
+
+[tool.coverage.run]
+omit = ["tests/*", "src/claveles/pb/claveles_cloud/*"]

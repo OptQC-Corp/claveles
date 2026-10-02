@@ -1,0 +1,90 @@
+{
+  "case": "bosonic_single_mode",
+  "route": "circuit",
+  "note": "Homodyne sampling from a squeezed state, and the vacuum reassigned to the measured mode.",
+  "sampling": true,
+  "conditions": {
+    "n_shots": 8,
+    "random_seed": 12345,
+    "backend": "single_cpu",
+    "state_save_policy": "all",
+    "resource_squeezing_level": 10.0,
+    "max_bond_dim": null,
+    "svd_cutoff": 0.0,
+    "track_truncation_error": false,
+    "decompose_std": false
+  },
+  "measured_columns": [
+    "shot",
+    "mode",
+    "value"
+  ],
+  "measured_rows": 8,
+  "truncation_errors": [],
+  "states": [
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    },
+    {
+      "kind": "zero_mode",
+      "meta": {
+        "n_modes": 0,
+        "modes": []
+      },
+      "arrays": []
+    }
+  ]
+}

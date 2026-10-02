@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claveles"
+version = "0.0.0"
+description = "Claveles meta-package (installs claveles-core and claveles-simulator)"
+readme = "README.md"
+requires-python = ">=3.10"
+
+authors = [{ name = "OptQC Corp.", email = "oss@optqc.com" }]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+keywords = ["quantum-computing", "quantum", "cluster-states", "continuous-variable", "bosonic", "CV"]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Quantum Computing",
+  "Typing :: Typed",
+]
+
+dependencies = [
+  "claveles-core",
+  "claveles-simulator",
+]
+
+[tool.setuptools]
+packages = []
