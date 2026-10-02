@@ -1,0 +1,28 @@
+{
+  "case": "machinery_route",
+  "route": "machinery",
+  "note": "The same graph lowered to a machinery representation and simulated there.",
+  "sampling": true,
+  "conditions": {
+    "n_shots": 8,
+    "random_seed": 12345,
+    "backend": "single_cpu",
+    "state_save_policy": "none",
+    "resource_squeezing_level": 10.0,
+    "max_bond_dim": null,
+    "svd_cutoff": 0.0,
+    "track_truncation_error": false,
+    "decompose_std": false
+  },
+  "measured_columns": [
+    "shot",
+    "index",
+    "m_a",
+    "m_b",
+    "m_c",
+    "m_d"
+  ],
+  "measured_rows": 16,
+  "truncation_errors": [],
+  "states": []
+}
